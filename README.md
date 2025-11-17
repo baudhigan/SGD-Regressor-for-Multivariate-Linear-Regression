@@ -25,67 +25,33 @@ Developed by: BAUDHIGAN D
 Register Number:  212223230028
 */
 ```
-```
-import pandas as pd
+```py
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.datasets import fetch_california_housing
 from sklearn.linear_model import SGDRegressor
 from sklearn.multioutput import MultiOutputRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-
-np.random.seed(42)
-n_samples = 200
-area = np.random.randint(800, 4000, n_samples)
-bedrooms = np.random.randint(1, 6, n_samples)
-bathrooms = np.random.randint(1, 4, n_samples)
-
-price = area * 120 + bedrooms * 50000 + bathrooms * 30000 + np.random.randint(-20000, 20000, n_samples)
-
-occupants = bedrooms + np.random.randint(0, 3, n_samples)
-
-data = pd.DataFrame({
-    "Area": area,
-    "Bedrooms": bedrooms,
-    "Bathrooms": bathrooms,
-    "Price": price,
-    "Occupants": occupants
-})
-
-X = data[["Area", "Bedrooms", "Bathrooms"]]
-y = data[["Price", "Occupants"]]
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
-
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
-
-sgd = MultiOutputRegressor(SGDRegressor(max_iter=1000, tol=1e-3, random_state=42))
-sgd.fit(X_train_scaled, y_train)
-
-y_pred = sgd.predict(X_test_scaled)
-
-print("Price Prediction Metrics:")
-print("MAE:", mean_absolute_error(y_test["Price"], y_pred[:, 0]))
-print("RMSE:", np.sqrt(mean_squared_error(y_test["Price"], y_pred[:, 0])))
-print("R²:", r2_score(y_test["Price"], y_pred[:, 0]))
-
-print("\nOccupants Prediction Metrics:")
-print("MAE:", mean_absolute_error(y_test["Occupants"], y_pred[:, 1]))
-print("RMSE:", np.sqrt(mean_squared_error(y_test["Occupants"], y_pred[:, 1])))
-print("R²:", r2_score(y_test["Occupants"], y_pred[:, 1]))
-
-new_house = pd.DataFrame([[2500, 4, 3]], columns=["Area", "Bedrooms", "Bathrooms"])
-new_house_scaled = scaler.transform(new_house)
-
-predicted = sgd.predict(new_house_scaled)[0]
-
-print("\nNew house prediction:")
-print("Predicted Price:", int(predicted[0]))
-print("Predicted Occupants:", round(predicted[1], 1))
+data=fetch_california_housing()
+X=data.data[:,:3]
+Y=np.column_stack((data.target,data.data[:,6]))
+X_train,X_test,Y_train,Y_test=train_test_split(X,Y,test_size=0.2,random_state=42)
+scaler_X=StandardScaler()
+scaler_Y=StandardScaler()
+X_train =scaler_X.fit_transform(X_train)
+X_test=scaler_X.transform(X_test)
+Y_train=scaler_Y.fit_transform(Y_train)
+Y_test=scaler_Y.transform(Y_test)
+sgd=SGDRegressor(max_iter=1000, tol=1e-3)
+multi_output_sgd=MultiOutputRegressor(sgd)
+multi_output_sgd.fit(X_train,Y_train)
+Y_pred=multi_output_sgd.predict(X_test)
+Y_pred=scaler_Y.inverse_transform(Y_pred)
+Y_test=scaler_Y.inverse_transform(Y_test)
+mse=mean_squared_error(Y_test,Y_pred)
+print("Mean Square Error:",mse)
+print("\nPredictions:\n",Y_pred[:5])
 
 ```
 ## Output:
